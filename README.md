@@ -6,19 +6,22 @@
 
 ![AgentBlast](https://raw.githubusercontent.com/petervdpas/AgentBlast/master/assets/icon.png)
 
-**AgentBlast** is a programmable LLM client for .NET — a sibling to
-[NetworkBlast](https://www.nuget.org/packages/NetworkBlast) and
+**AgentBlast** is a programmable LLM client *plus a directing layer* for .NET —
+a sibling to [NetworkBlast](https://www.nuget.org/packages/NetworkBlast) and
 [AzureBlast](https://www.nuget.org/packages/AzureBlast) in the Blast family.
 One front door (`AgentClient`) dispatches to provider-specific implementations
 based on a connection's `kind` field, and every secret (API key, base URL,
 model id, token cap) is pulled through the same `Func<category, key, ct, Task<string>>`
-resolver delegate the rest of the Blast family already speaks.
+resolver delegate the rest of the Blast family already speaks. On top of that
+sits the **directing layer**: knowledge blocks, a picker, a prompt builder,
+and an audit log — what turns a raw chat completion into a steerable agent.
 
 ---
 
 > ✅ **Status:** 1.0 — Anthropic provider in the box (Claude Opus 4.7, Sonnet 4.6,
-> Haiku 4.5). OpenAI and Ollama planned. Vault-agnostic, host-agnostic, no
-> SDK dependency on the Anthropic side (raw `HttpClient` + `System.Text.Json`).
+> Haiku 4.5); OpenAI and Ollama planned. Directing layer (knowledge blocks,
+> picker, prompt builder, audit log) shipped. Vault-agnostic, host-agnostic,
+> no SDK dependency on the Anthropic side (raw `HttpClient` + `System.Text.Json`).
 
 ---
 
@@ -252,17 +255,23 @@ var client = new AgentClient(http,
 ## 🤖 AI assistants — Blast-family convention
 
 AgentBlast's main assembly stamps the Blast-family `Blast.PrimaryFacade`
-attribute, naming `AgentClient` as its canonical front-door type. AI
-assistants (e.g. TaskBlaster's Directed-AI layer) read this attribute via
-reflection to identify entry points without scanning every public type:
+attribute, naming its canonical front-door types (comma-separated, fully
+qualified). AI assistants (e.g. TaskBlaster's Directed-AI layer) read this
+attribute via reflection to identify entry points without scanning every
+public type:
 
 ```csharp
-typeof(AgentClient).Assembly
-    .GetCustomAttributes<System.Reflection.AssemblyMetadataAttribute>()
+using System.Reflection;
+
+var facades = typeof(AgentClient).Assembly
+    .GetCustomAttributes<AssemblyMetadataAttribute>()
     .Where(a => a.Key == "Blast.PrimaryFacade")
-    .Select(a => a.Value)
+    .SelectMany(a => (a.Value ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries))
+    .Select(s => s.Trim())
     .ToList();
-// → ["AgentBlast.AgentClient"]
+// → ["AgentBlast.AgentClient",
+//    "AgentBlast.Knowledge.KnowledgeBlockPicker",
+//    "AgentBlast.Prompts.PromptBuilder"]
 ```
 
 | Package    | Front doors        |
