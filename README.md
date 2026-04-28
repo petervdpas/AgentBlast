@@ -111,6 +111,83 @@ Console.WriteLine(ping.Success
 
 ---
 
+## 🎯 The directing layer
+
+Raw chat completion is necessary but not sufficient — what makes an LLM
+useful for a real codebase is *direction*: the user-curated context that
+tells the model "in THIS project, use these conventions, prefer these
+helpers, follow these runbook steps". AgentBlast bundles that layer.
+
+### Knowledge blocks (`AgentBlast.Knowledge`)
+
+A **knowledge block** is one markdown file with YAML frontmatter that
+captures one piece of project knowledge. The host points
+`KnowledgeBlockStore` at a folder of these files; users hand-author them.
+
+```markdown
+---
+title: Customer domain conventions
+when: Acme.Domain
+priority: 60
+tags: domain, models
+includes: shared-naming
+---
+
+Customer.Code is the stable identifier for cross-system joins; never use
+Customer.Id for that — it's a per-database surrogate.
+```
+
+Frontmatter keys recognised by the picker:
+
+* **`when`** — comma-separated rules (ANY match fires the block):
+  * `always` — always matches.
+  * `tag:foo` — matches when the picker context contains tag `foo`.
+  * `Namespace.Type` — matches an exact loaded type FQN.
+  * `Namespace` — matches a loaded namespace, or any FQN starting with it.
+  * Blocks with no `when` are never picked as entry points; they only get pulled in via another block's `includes`.
+* **`priority`** — integer; higher fires first when budgeted truncation matters.
+* **`includes`** — comma-separated block ids to pull in transitively (cycle-safe).
+* **`tags`** — comma-separated; lowercased + deduplicated on save.
+
+### Picker (`AgentBlast.Knowledge.KnowledgeBlockPicker`)
+
+A pure function. Takes a knowledge library + a `PickerContext` (what's
+loaded, what tags are active) and returns the ordered list of blocks
+that should fire, plus a per-block reason ("matched 'Acme.Domain'",
+"included via 'parent-block'") for audit UIs.
+
+```csharp
+var ctx = new PickerContext(
+    LoadedTypeFqns:   new HashSet<string> { "Acme.Domain.Customer" },
+    LoadedNamespaces: new HashSet<string> { "Acme.Domain" },
+    Tags:             new[] { "convert-to-form" });
+
+var picked = KnowledgeBlockPicker.Pick(store.List(), ctx);
+```
+
+### Prompt builder (`AgentBlast.Prompts.PromptBuilder`)
+
+Composes a structured system prompt from the picked blocks plus a
+snapshot of loaded references (`LoadedReference[]` — the host produces
+this by walking its AppDomain). Output is split system / user the way
+modern chat APIs expect, so the system half is cacheable.
+
+```csharp
+var prompt = PromptBuilder.Build(picked, references, userMessage: question);
+var result = await client.SendAsync(
+    "anthropic", prompt.SystemMessage,
+    new[] { AgentMessage.User(prompt.UserMessage) });
+```
+
+### Audit log (`AgentBlast.Prompts.PromptArtifactWriter`)
+
+Writes one markdown artifact per call (or per preview) to a host-chosen
+folder. Frontmatter records picked block ids + loaded reference summary;
+body carries the full system + user messages verbatim. Useful for "why
+did it answer that way?" retrospectives and for tuning blocks.
+
+---
+
 ## 🧠 Connection schema
 
 A connection bag is a string → string map keyed by field name. AgentBlast
@@ -190,7 +267,7 @@ typeof(AgentClient).Assembly
 
 | Package    | Front doors        |
 |------------|--------------------|
-| AgentBlast | `AgentBlast.AgentClient` |
+| AgentBlast | `AgentBlast.AgentClient`, `AgentBlast.Knowledge.KnowledgeBlockPicker`, `AgentBlast.Prompts.PromptBuilder` |
 
 ---
 

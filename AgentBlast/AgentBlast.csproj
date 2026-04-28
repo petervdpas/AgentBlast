@@ -12,8 +12,8 @@
         <PackageId>AgentBlast</PackageId>
         <Version>1.0.0</Version>
         <Authors>Peter van de Pas</Authors>
-        <Description>AgentBlast — programmable LLM client for .NET. Sibling to NetworkBlast / AzureBlast in the Blast family. Named connections resolved through a pluggable Func&lt;category, key, ct, Task&lt;string&gt;&gt; secret resolver, so callers stay decoupled from any vault implementation. Anthropic provider in the box; OpenAI / Ollama planned.</Description>
-        <PackageTags>llm;ai;anthropic;claude;agent;named-connections;blast</PackageTags>
+        <Description>AgentBlast — programmable LLM client for .NET, plus the directing layer (knowledge blocks, prompt builder, audit log) that turns a raw chat completion into a steerable agent. Sibling to NetworkBlast / AzureBlast in the Blast family. Named connections resolved through a pluggable Func&lt;category, key, ct, Task&lt;string&gt;&gt; secret resolver, so callers stay decoupled from any vault implementation. Anthropic provider in the box; OpenAI / Ollama planned.</Description>
+        <PackageTags>llm;ai;anthropic;claude;agent;directed-ai;knowledge-blocks;named-connections;blast</PackageTags>
         <PackageLicenseFile>assets/LICENSE.txt</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>assets/icon.png</PackageIcon>
@@ -47,7 +47,7 @@
     <ItemGroup>
         <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
             <_Parameter1>Blast.PrimaryFacade</_Parameter1>
-            <_Parameter2>AgentBlast.AgentClient</_Parameter2>
+            <_Parameter2>AgentBlast.AgentClient,AgentBlast.Knowledge.KnowledgeBlockPicker,AgentBlast.Prompts.PromptBuilder</_Parameter2>
         </AssemblyAttribute>
     </ItemGroup>
 </Project>
