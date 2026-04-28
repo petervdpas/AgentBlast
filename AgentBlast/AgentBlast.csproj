@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageOutputPath>bin\$(Configuration)</PackageOutputPath>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>AgentBlast</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Peter van de Pas</Authors>
+        <Description>AgentBlast — programmable LLM client for .NET. Sibling to NetworkBlast / AzureBlast in the Blast family. Named connections resolved through a pluggable Func&lt;category, key, ct, Task&lt;string&gt;&gt; secret resolver, so callers stay decoupled from any vault implementation. Anthropic provider in the box; OpenAI / Ollama planned.</Description>
+        <PackageTags>llm;ai;anthropic;claude;agent;named-connections;blast</PackageTags>
+        <PackageLicenseFile>assets/LICENSE.txt</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <DebugType>embedded</DebugType>
+        <Deterministic>true</Deterministic>
+        <PathMap>$(MSBuildProjectDirectory)=.</PathMap>
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <EnableSourceLink>true</EnableSourceLink>
+        <RepositoryUrl>https://github.com/petervdpas/AgentBlast</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="../assets/LICENSE.txt" Pack="true" PackagePath="assets/" />
+        <None Include="../README.md" Pack="true" PackagePath="" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="AgentBlast.Tests" />
+    </ItemGroup>
+
+    <!--
+        Blast-family convention: declare the canonical front-door type(s)
+        of this assembly so AI assistants (e.g. TaskBlaster's Directed-AI
+        layer) can identify the entry points without having to scan every
+        public type. Comma-separated, fully-qualified.
+    -->
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+            <_Parameter1>Blast.PrimaryFacade</_Parameter1>
+            <_Parameter2>AgentBlast.AgentClient</_Parameter2>
+        </AssemblyAttribute>
+    </ItemGroup>
+</Project>

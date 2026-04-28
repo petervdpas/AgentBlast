@@ -1,0 +1,30 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+artifacts/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+
+# Rider / IntelliJ
+.idea/
+*.iml
+/_ReSharper.Caches/
+
+# Visual Studio
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vs/
+
+# Logs
+*.log
+
+# OS-specific
+[Dd]esktop.ini
+[Tt]humbs.db

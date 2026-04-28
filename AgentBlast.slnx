@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="AgentBlast.Tests/AgentBlast.Tests.csproj" />
+  <Project Path="AgentBlast/AgentBlast.csproj" />
+</Solution>
