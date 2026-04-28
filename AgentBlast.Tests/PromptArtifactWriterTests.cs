@@ -72,8 +72,8 @@ public sealed class PromptArtifactWriterTests : IDisposable
     {
         var picked = new[]
         {
-            new PickedBlock(Block("a", "Alpha", "x\n"), "matched 'always'"),
-            new PickedBlock(Block("b", "Beta",  "y\n"), "included via 'a'"),
+            new PickedBlock(Block("a", "Alpha", "x\n"), "matched 'always'", InclusionMode.Triggered),
+            new PickedBlock(Block("b", "Beta",  "y\n"), "included via 'a'", InclusionMode.Available),
         };
 
         var path = new PromptArtifactWriter(_temp).Write(

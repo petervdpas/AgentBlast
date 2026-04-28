@@ -10,7 +10,7 @@
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>AgentBlast</PackageId>
-        <Version>1.0.0</Version>
+        <Version>1.1.0</Version>
         <Authors>Peter van de Pas</Authors>
         <Description>AgentBlast — programmable LLM client for .NET, plus the directing layer (knowledge blocks, prompt builder, audit log) that turns a raw chat completion into a steerable agent. Sibling to NetworkBlast / AzureBlast in the Blast family. Named connections resolved through a pluggable Func&lt;category, key, ct, Task&lt;string&gt;&gt; secret resolver, so callers stay decoupled from any vault implementation. Anthropic provider in the box; OpenAI / Ollama planned.</Description>
         <PackageTags>llm;ai;anthropic;claude;agent;directed-ai;knowledge-blocks;named-connections;blast</PackageTags>

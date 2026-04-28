@@ -237,7 +237,7 @@ public sealed class PromptBuilderTests
     public void NullBlocks_Throws()
     {
         Assert.Throws<ArgumentNullException>(() =>
-            PromptBuilder.Build(null!, Array.Empty<LoadedReference>(), "x"));
+            PromptBuilder.Build((IReadOnlyList<KnowledgeBlock>)null!, Array.Empty<LoadedReference>(), "x"));
     }
 
     [Fact]
@@ -252,6 +252,138 @@ public sealed class PromptBuilderTests
     {
         Assert.Throws<ArgumentNullException>(() =>
             PromptBuilder.Build(Array.Empty<KnowledgeBlock>(), Array.Empty<LoadedReference>(), null!));
+    }
+
+    // ─────────────────────────── PickedBlock overload ──────────────
+
+    [Fact]
+    public void PickedOverload_TriggeredBlock_RendersFully()
+    {
+        var p = PromptBuilder.Build(
+            new[] { new PickedBlock(Block("a", "Alpha", "alpha body\n", priority: 5), "matched 'always'", InclusionMode.Triggered) },
+            Array.Empty<LoadedReference>(),
+            "x");
+
+        Assert.Contains("# Directing context", p.SystemMessage);
+        Assert.Contains("## Alpha", p.SystemMessage);
+        Assert.Contains("(id=a, priority=5)", p.SystemMessage);
+        Assert.Contains("alpha body", p.SystemMessage);
+        Assert.DoesNotContain("Also available", p.SystemMessage);
+    }
+
+    [Fact]
+    public void PickedOverload_AvailableBlock_RendersInTailSection()
+    {
+        var p = PromptBuilder.Build(
+            new[]
+            {
+                new PickedBlock(Block("entry", "Entry",   "entry body\n"),  "matched 'always'",     InclusionMode.Triggered),
+                new PickedBlock(Block("base",  "Base SQL", "base body\n"),  "included via 'entry'", InclusionMode.Available),
+            },
+            Array.Empty<LoadedReference>(),
+            "x");
+
+        // Triggered renders fully.
+        Assert.Contains("## Entry", p.SystemMessage);
+        Assert.Contains("entry body", p.SystemMessage);
+
+        // Available renders in tail, body omitted, reason inlined.
+        Assert.Contains("### Also available (reference-only)", p.SystemMessage);
+        Assert.Contains("- Base SQL (id=base) — included via 'entry'", p.SystemMessage);
+        Assert.DoesNotContain("base body", p.SystemMessage);
+    }
+
+    [Fact]
+    public void PickedOverload_OnlyAvailable_NoTriggered_StillEmitsTail()
+    {
+        // Degenerate but valid: a host could pre-filter out triggered blocks
+        // and still want the available list rendered.
+        var p = PromptBuilder.Build(
+            new[]
+            {
+                new PickedBlock(Block("base", "Base SQL", "x\n"), "included via 'entry'", InclusionMode.Available),
+            },
+            Array.Empty<LoadedReference>(),
+            "x");
+
+        Assert.Contains("# Directing context", p.SystemMessage);
+        Assert.Contains("### Also available (reference-only)", p.SystemMessage);
+        Assert.Contains("- Base SQL (id=base) — included via 'entry'", p.SystemMessage);
+    }
+
+    [Fact]
+    public void PickedOverload_OnlyTriggered_OmitsTailHeading()
+    {
+        var p = PromptBuilder.Build(
+            new[]
+            {
+                new PickedBlock(Block("a", "A", "body\n"), "matched 'always'", InclusionMode.Triggered),
+                new PickedBlock(Block("b", "B", "body\n"), "matched 'always'", InclusionMode.Triggered),
+            },
+            Array.Empty<LoadedReference>(),
+            "x");
+
+        Assert.DoesNotContain("Also available", p.SystemMessage);
+    }
+
+    [Fact]
+    public void PickedOverload_AvailableWithoutReason_OmitsTrailingDash()
+    {
+        var p = PromptBuilder.Build(
+            new[]
+            {
+                new PickedBlock(Block("base", "Base", "x\n"), string.Empty, InclusionMode.Available),
+            },
+            Array.Empty<LoadedReference>(),
+            "x");
+
+        Assert.Contains("- Base (id=base)", p.SystemMessage);
+        // No trailing " — " when reason is empty.
+        Assert.DoesNotContain("- Base (id=base) —", p.SystemMessage);
+    }
+
+    [Fact]
+    public void PickedOverload_TriggeredAndAvailable_SeparatedByHorizontalRule()
+    {
+        var p = PromptBuilder.Build(
+            new[]
+            {
+                new PickedBlock(Block("a", "A", "body\n"),    "matched 'always'",   InclusionMode.Triggered),
+                new PickedBlock(Block("b", "B", "ref body\n"), "included via 'a'",  InclusionMode.Available),
+            },
+            Array.Empty<LoadedReference>(),
+            "x");
+
+        // The Triggered block "A" must come before the tail header.
+        var idxA    = p.SystemMessage.IndexOf("## A");
+        var idxTail = p.SystemMessage.IndexOf("### Also available");
+        Assert.True(idxA >= 0 && idxTail > idxA);
+
+        // And there should be a separator between them.
+        var between = p.SystemMessage.Substring(idxA, idxTail - idxA);
+        Assert.Contains("\n---\n", between);
+    }
+
+    [Fact]
+    public void Wrapper_KnowledgeBlocksOverload_RendersAllAsTriggered()
+    {
+        // Back-compat: the old overload has no mode info, so every block
+        // must render fully (not in a tail section).
+        var p = PromptBuilder.Build(
+            new[] { Block("a", "A", "body\n"), Block("b", "B", "body\n") },
+            Array.Empty<LoadedReference>(),
+            "x");
+
+        Assert.Contains("## A", p.SystemMessage);
+        Assert.Contains("## B", p.SystemMessage);
+        Assert.DoesNotContain("Also available", p.SystemMessage);
+    }
+
+    [Fact]
+    public void PickedOverload_NullBlocks_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            PromptBuilder.Build((IReadOnlyList<PickedBlock>)null!, Array.Empty<LoadedReference>(), "x"));
     }
 
     private static int CountOccurrences(string haystack, string needle)

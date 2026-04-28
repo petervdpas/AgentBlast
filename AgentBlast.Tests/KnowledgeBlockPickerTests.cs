@@ -353,4 +353,91 @@ public sealed class KnowledgeBlockPickerTests
 
         Assert.Contains("AzureBlast.MssqlDatabase", picked[0].Reason);
     }
+
+    // ─────────────────────── inclusion mode ────────────────────────
+
+    [Fact]
+    public void Mode_DirectEntry_IsTriggered()
+    {
+        var picked = KnowledgeBlockPicker.PickWithReasons(
+            new[] { Block("a", when: "always") },
+            PickerContext.Empty);
+
+        Assert.Single(picked);
+        Assert.Equal(InclusionMode.Triggered, picked[0].Mode);
+    }
+
+    [Fact]
+    public void Mode_TransitiveInclude_IsAvailable()
+    {
+        var entry = Block("entry", when: "always", includes: new[] { "base" });
+        var basis = Block("base"); // no when:, only pulled in transitively
+
+        var picked = KnowledgeBlockPicker.PickWithReasons(new[] { entry, basis }, PickerContext.Empty);
+
+        Assert.Equal(InclusionMode.Triggered, picked.Single(p => p.Block.Id == "entry").Mode);
+        Assert.Equal(InclusionMode.Available, picked.Single(p => p.Block.Id == "base").Mode);
+    }
+
+    [Fact]
+    public void Mode_BothDirectAndTransitive_DirectWins()
+    {
+        // 'shared' has its own when: rule (matches) AND is included by 'entry'
+        // (which also matches). Direct match must win regardless of iteration
+        // order — ordering by id ensures we hit 'entry' first if iteration is
+        // alphabetical, but the result must still be Triggered.
+        var entry  = Block("entry",  when: "always", includes: new[] { "shared" });
+        var shared = Block("shared", when: "always");
+
+        var picked = KnowledgeBlockPicker.PickWithReasons(new[] { entry, shared }, PickerContext.Empty);
+
+        Assert.Equal(InclusionMode.Triggered, picked.Single(p => p.Block.Id == "shared").Mode);
+        Assert.Contains("matched", picked.Single(p => p.Block.Id == "shared").Reason);
+    }
+
+    [Fact]
+    public void Mode_BothDirectAndTransitive_DirectWins_RegardlessOfInputOrder()
+    {
+        // Same as above but with reversed input order — direct match must
+        // still win even if the picker would otherwise have hit the include
+        // path first via 'entry'.
+        var entry  = Block("entry",  when: "always", includes: new[] { "shared" });
+        var shared = Block("shared", when: "always");
+
+        var picked = KnowledgeBlockPicker.PickWithReasons(new[] { shared, entry }, PickerContext.Empty);
+
+        Assert.Equal(InclusionMode.Triggered, picked.Single(p => p.Block.Id == "shared").Mode);
+    }
+
+    [Fact]
+    public void Mode_IncludedFromMultipleEntries_StaysAvailable()
+    {
+        // 'shared' has no when:, gets pulled in by both 'a' and 'b'. It's
+        // never directly triggered, so Mode is Available.
+        var a      = Block("a",      when: "always", includes: new[] { "shared" });
+        var b      = Block("b",      when: "always", includes: new[] { "shared" });
+        var shared = Block("shared");
+
+        var picked = KnowledgeBlockPicker.PickWithReasons(new[] { a, b, shared }, PickerContext.Empty);
+
+        Assert.Equal(InclusionMode.Triggered, picked.Single(p => p.Block.Id == "a").Mode);
+        Assert.Equal(InclusionMode.Triggered, picked.Single(p => p.Block.Id == "b").Mode);
+        Assert.Equal(InclusionMode.Available, picked.Single(p => p.Block.Id == "shared").Mode);
+    }
+
+    [Fact]
+    public void Mode_TransitivelyIncludedThroughChain_AllAvailable()
+    {
+        // Only 'a' is directly triggered. b and c come along via the chain
+        // a -> b -> c; both should be Available, not just the leaf.
+        var a = Block("a", when: "always", includes: new[] { "b" });
+        var b = Block("b", includes: new[] { "c" });
+        var c = Block("c");
+
+        var picked = KnowledgeBlockPicker.PickWithReasons(new[] { a, b, c }, PickerContext.Empty);
+
+        Assert.Equal(InclusionMode.Triggered, picked.Single(p => p.Block.Id == "a").Mode);
+        Assert.Equal(InclusionMode.Available, picked.Single(p => p.Block.Id == "b").Mode);
+        Assert.Equal(InclusionMode.Available, picked.Single(p => p.Block.Id == "c").Mode);
+    }
 }

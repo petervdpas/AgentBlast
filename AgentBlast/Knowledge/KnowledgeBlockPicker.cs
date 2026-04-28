@@ -42,7 +42,8 @@ public static class KnowledgeBlockPicker
 
     /// <summary>
     /// Pick the relevant blocks plus a human-readable reason per block
-    /// (the rule that fired, or the parent block that pulled it in).
+    /// (the rule that fired, or the parent block that pulled it in) and
+    /// the <see cref="InclusionMode"/> that drives prompt rendering.
     /// Used by the Preview button and the future audit log; the
     /// non-reason <see cref="Pick"/> is a thin wrapper.
     /// </summary>
@@ -64,18 +65,41 @@ public static class KnowledgeBlockPicker
 
         var pickedReasons = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var pickedBlocks = new Dictionary<string, KnowledgeBlock>(StringComparer.OrdinalIgnoreCase);
+        var triggeredIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+        // Pass 1: seed directly-triggered entries. Done first (and without
+        // recursion) so direct matches always win over transitive includes —
+        // pass 2 uses TryAdd, so an already-seeded triggered block won't
+        // have its reason or mode clobbered by a later "included via" walk.
         foreach (var entry in byId.Values)
         {
             var entryMatch = MatchReason(entry, context);
             if (entryMatch is null) continue;
-            ExpandIncludes(entry, parentReason: $"matched {entryMatch}", byId, pickedBlocks, pickedReasons);
+            triggeredIds.Add(entry.Id);
+            pickedBlocks[entry.Id] = entry;
+            pickedReasons[entry.Id] = $"matched {entryMatch}";
+        }
+
+        // Pass 2: expand each triggered entry's includes graph. Cycle
+        // safety still comes from TryAdd in ExpandIncludes.
+        foreach (var entryId in triggeredIds)
+        {
+            var entry = byId[entryId];
+            foreach (var includeId in entry.Includes)
+            {
+                if (string.IsNullOrWhiteSpace(includeId)) continue;
+                if (byId.TryGetValue(includeId, out var sub))
+                    ExpandIncludes(sub, parentReason: $"included via '{entry.Id}'", byId, pickedBlocks, pickedReasons);
+            }
         }
 
         return pickedBlocks.Values
             .OrderByDescending(b => b.Priority ?? int.MinValue)
             .ThenBy(b => b.Title, StringComparer.OrdinalIgnoreCase)
-            .Select(b => new PickedBlock(b, pickedReasons[b.Id]))
+            .Select(b => new PickedBlock(
+                b,
+                pickedReasons[b.Id],
+                triggeredIds.Contains(b.Id) ? InclusionMode.Triggered : InclusionMode.Available))
             .ToList();
     }
 

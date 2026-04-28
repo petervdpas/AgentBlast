@@ -31,7 +31,7 @@ public enum LoadedReferenceOrigin
 /// host hands to AgentBlast as "what's available in scope right now"; the
 /// host is responsible for producing this snapshot (typically by walking
 /// <c>AppDomain.CurrentDomain</c> and classifying each assembly), and
-/// AgentBlast consumes it through <see cref="PromptBuilder.Build"/>.
+/// AgentBlast consumes it through <see cref="PromptBuilder"/>.
 /// </summary>
 /// <param name="Name">Assembly simple name.</param>
 /// <param name="Version">Assembly version string.</param>

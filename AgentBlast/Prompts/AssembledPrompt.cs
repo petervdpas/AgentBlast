@@ -1,7 +1,7 @@
 namespace AgentBlast.Prompts;
 
 /// <summary>
-/// The output of <see cref="PromptBuilder.Build"/>: the two halves of an
+/// The output of <see cref="PromptBuilder"/>: the two halves of an
 /// AI request, ready to hand to <see cref="AgentBlast.AgentClient"/>. The system half
 /// carries stable directing context (knowledge blocks + library reference)
 /// that doesn't change between calls within a session; the user half
