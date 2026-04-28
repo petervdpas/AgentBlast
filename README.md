@@ -4,6 +4,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/AgentBlast.svg)](https://www.nuget.org/packages/AgentBlast)
 [![License](https://img.shields.io/github/license/petervdpas/AgentBlast.svg)](https://opensource.org/licenses/MIT)
 
+![AgentBlast](https://raw.githubusercontent.com/petervdpas/AgentBlast/master/assets/icon.png)
+
 **AgentBlast** is a programmable LLM client for .NET — a sibling to
 [NetworkBlast](https://www.nuget.org/packages/NetworkBlast) and
 [AzureBlast](https://www.nuget.org/packages/AzureBlast) in the Blast family.

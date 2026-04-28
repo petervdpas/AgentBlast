@@ -16,6 +16,7 @@
         <PackageTags>llm;ai;anthropic;claude;agent;named-connections;blast</PackageTags>
         <PackageLicenseFile>assets/LICENSE.txt</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>assets/icon.png</PackageIcon>
         <DebugType>embedded</DebugType>
         <Deterministic>true</Deterministic>
         <PathMap>$(MSBuildProjectDirectory)=.</PathMap>
@@ -28,6 +29,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <None Include="../assets/icon.png" Pack="true" PackagePath="assets/" />
         <None Include="../assets/LICENSE.txt" Pack="true" PackagePath="assets/" />
         <None Include="../README.md" Pack="true" PackagePath="" />
     </ItemGroup>
