@@ -20,9 +20,9 @@ namespace AgentBlast.Prompts;
 /// <para>
 /// References are filtered to <see cref="LoadedReferenceOrigin.Blast"/>
 /// and <see cref="LoadedReferenceOrigin.External"/> only. The framework
-/// BCL and TaskBlaster's own assemblies would dwarf the actually-useful
-/// content in tokens and offer no directing value — the model already
-/// knows about <c>System.*</c>.
+/// BCL and the host application's own assemblies would dwarf the
+/// actually-useful content in tokens and offer no directing value —
+/// the model already knows about <c>System.*</c>.
 /// </para>
 /// </summary>
 public static class PromptBuilder

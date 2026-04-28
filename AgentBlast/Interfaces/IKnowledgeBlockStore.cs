@@ -5,12 +5,11 @@ namespace AgentBlast.Interfaces;
 
 /// <summary>
 /// Reads and writes the user's directing-context blocks. Each block is a
-/// single markdown file under the knowledge folder (default
-/// <c>~/.taskblaster/knowledge/</c>); frontmatter lives at the top of
-/// the file as YAML-style <c>key: value</c> lines between two <c>---</c>
-/// fences. The on-disk markdown is the source of truth — users can edit
-/// the files outside TaskBlaster and the store will pick the changes up
-/// on the next <see cref="Reload"/>.
+/// single markdown file under the host-chosen knowledge folder; frontmatter
+/// lives at the top of the file as YAML-style <c>key: value</c> lines
+/// between two <c>---</c> fences. The on-disk markdown is the source of
+/// truth — users can edit the files outside the host application and the
+/// store will pick the changes up on the next <see cref="Reload"/>.
 /// </summary>
 public interface IKnowledgeBlockStore
 {
